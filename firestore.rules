@@ -1,0 +1,147 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (from Auth)
+    // Fields:
+    //   - name: string (required)
+    //   - photo: string (optional)
+    //   - bio: string (optional)
+    //   - savedPosts: list (postIds)
+    //   - created_at: timestamp
+    //
+    // Collection: posts
+    // Fields:
+    //   - userId: string (required)
+    //   - userName: string
+    //   - userPhoto: string
+    //   - content: string (required, max 1000)
+    //   - image: string (optional)
+    //   - likes: list (uids)
+    //   - created_at: timestamp
+    //
+    // Collection: posts/{postId}/comments
+    // Fields:
+    //   - postId: string
+    //   - userId: string
+    //   - userName: string
+    //   - userPhoto: string
+    //   - content: string
+    //   - created_at: timestamp
+    //
+    // Collection: homework
+    // Fields:
+    //   - title: string
+    //   - description: string
+    //   - date: string
+    //   - created_at: timestamp
+    //
+    // Collection: messages
+    // Fields:
+    //   - senderId: string
+    //   - senderName: string
+    //   - senderPhoto: string
+    //   - text: string
+    //   - created_at: timestamp
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+         request.auth.token.email == "rtouma78@gmail.com";
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['name', 'created_at']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             (!('photo' in data) || (data.photo is string && data.photo.size() < 1000000)) &&
+             (!('bio' in data) || (data.bio is string && data.bio.size() < 1000)) &&
+             (!('savedPosts' in data) || (data.savedPosts is list));
+    }
+
+    function isValidPost(data) {
+      return data.keys().hasAll(['userId', 'content', 'created_at']) &&
+             data.userId == request.auth.uid &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 5000 &&
+             (!('image' in data) || (data.image is string && data.image.size() < 1000000)) &&
+             (!('userName' in data) || (data.userName is string)) &&
+             (!('userPhoto' in data) || (data.userPhoto is string)) &&
+             (!('likes' in data) || (data.likes is list));
+    }
+
+    function isValidComment(data) {
+      return data.keys().hasAll(['postId', 'userId', 'content', 'created_at']) &&
+             data.userId == request.auth.uid &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 1000 &&
+             (!('userName' in data) || (data.userName is string)) &&
+             (!('userPhoto' in data) || (data.userPhoto is string));
+    }
+
+    function isValidHomework(data) {
+      return data.keys().hasAll(['title', 'description', 'date', 'created_at']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.description is string && data.description.size() < 5000;
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['senderId', 'text', 'created_at']) &&
+             data.senderId == request.auth.uid &&
+             data.text is string && data.text.size() > 0 && data.text.size() < 1000 &&
+             (!('senderName' in data) || (data.senderName is string)) &&
+             (!('senderPhoto' in data) || (data.senderPhoto is string));
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data);
+    }
+
+    match /posts/{postId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidPost(request.resource.data);
+      allow update: if isAuthenticated() && (
+        (isOwner(resource.data.userId) && isValidPost(request.resource.data)) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']))
+      );
+      allow delete: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
+
+      match /comments/{commentId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() && isValidComment(request.resource.data);
+        allow delete: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
+      }
+    }
+
+    match /homework/{homeworkId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidHomework(request.resource.data);
+    }
+
+    match /messages/{messageId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidMessage(request.resource.data);
+    }
+  }
+}

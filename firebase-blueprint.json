@@ -1,0 +1,79 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A student in the school app.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Display name of the user." },
+        "photo": { "type": "string", "description": "Profile photo URL." },
+        "bio": { "type": "string", "description": "Optional bio or status message." },
+        "savedPosts": { "type": "array", "items": { "type": "string" }, "description": "List of saved post IDs." },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "created_at"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "A social post shared by a student.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhoto": { "type": "string" },
+        "content": { "type": "string" },
+        "image": { "type": "string" },
+        "likes": { "type": "array", "items": { "type": "string" } },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "content", "created_at"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "A comment on a post.",
+      "type": "object",
+      "properties": {
+        "postId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhoto": { "type": "string" },
+        "content": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["postId", "userId", "content", "created_at"]
+    },
+    "Homework": {
+      "title": "Homework",
+      "description": "A homework assignment or announcement from a teacher.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "teacherName": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "description", "date", "created_at"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A message in the class chat.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "senderPhoto": { "type": "string" },
+        "text": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "text", "created_at"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": "User", "description": "User profiles." },
+    "/posts/{postId}": { "schema": "Post", "description": "Social feed posts." },
+    "/posts/{postId}/comments/{commentId}": { "schema": "Comment", "description": "Comments on posts." },
+    "/homework/{homeworkId}": { "schema": "Homework", "description": "Homework assignments." },
+    "/messages/{messageId}": { "schema": "Message", "description": "Global class chat messages." }
+  }
+}
