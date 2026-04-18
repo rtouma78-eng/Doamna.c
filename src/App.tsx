@@ -482,8 +482,7 @@ const Classmates = () => {
         {users.map((u) => (
           <div 
             key={u.uid} 
-            onClick={() => setSelectedUser(u)}
-            className="bg-white p-4 rounded-2xl border border-gray-100 flex items-center gap-4 shadow-sm hover:shadow-md transition cursor-pointer"
+            className="bg-white p-4 rounded-2xl border border-gray-100 flex items-center gap-4 shadow-sm hover:shadow-md transition"
           >
             <img 
               src={u.photo || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.name}`} 
@@ -493,8 +492,14 @@ const Classmates = () => {
             />
             <div className="flex-1">
               <p className="font-bold text-gray-900">{u.name}</p>
-              <p className="text-xs text-gray-500 italic truncate max-w-[200px]">{u.bio || 'Fără bio'}</p>
+              <p className="text-xs text-gray-500 italic truncate max-w-[150px]">{u.bio || 'Fără bio'}</p>
             </div>
+            <button 
+              onClick={() => setSelectedUser(u)}
+              className="px-4 py-2 bg-orange-50 text-orange-600 text-xs font-bold rounded-xl hover:bg-orange-100 transition whitespace-nowrap"
+            >
+              Vizualizează Profil
+            </button>
           </div>
         ))}
       </div>
